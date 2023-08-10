@@ -1,0 +1,4 @@
+@echo off
+set /p "searchTerm=Search: "
+powershell /command "Get-WmiObject Win32_Product | Where Name -ilike '*%searchTerm%*' | Format-Table IdentifyingNumber, Name"
+pause

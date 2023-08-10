@@ -1,0 +1,175 @@
+function Get-CryptoRandomSeed {
+    try {
+        [System.Security.Cryptography.RNGCryptoServiceProvider] $rng = New-Object System.Security.Cryptography.RNGCryptoServiceProvider;
+        $rndnum = New-Object byte[] 3;
+        $rng.GetBytes($rndnum);
+        $rndnum = -join $rndnum;
+    } catch {
+        return $(Get-Random)
+    }
+    return $rndnum;
+}
+
+function New-RandomCharacters {
+    param (
+        [ValidateNotNullOrEmpty()]
+        [ValidateSet('Upper','Lower')]
+        [string]$Case,
+        [int]$Count = 1,
+        [string]$Pattern = "a-z"
+    )
+    if($Pattern.Contains("-")) {
+        $patternStart = [byte]([char]$Pattern.Split("-")[0]);
+        $patternEnd = [byte]([char]$Pattern.Split("-")[1]);
+        $randomLetters = -join (1..$Count | ForEach-Object {
+            return [char](($patternStart..$patternEnd) | Get-Random -SetSeed $(Get-CryptoRandomSeed));
+        })
+    } else {
+        $randomLetters = -join (1..$Count | ForEach-Object {
+            return ($Pattern.ToCharArray() | Get-Random -SetSeed $(Get-CryptoRandomSeed));
+        });
+    }
+    switch($Case) {
+        "Upper" {
+            return $randomLetters.toUpper();
+            break;
+        }
+        "Lower" {
+            return $randomLetters.toLower();
+            break;
+        }
+        default {
+            return $randomLetters;
+            break;
+        }
+    }
+}
+
+function New-ShortStandardPassword {
+return -join (
+    (New-RandomCharacters -Case Upper),
+    (New-RandomCharacters -Pattern "aeiou"),
+    (New-RandomCharacters),
+    (New-RandomCharacters -Count 5 -Pattern "0-9"),
+    (New-RandomCharacters -Pattern "#+!." -Count 2)
+)
+}
+
+function New-LongStandardPassword {
+$longstr = -join ((1..5) | Foreach {
+    return -join (
+        (New-RandomCharacters -Pattern "aeiou"),
+        (New-RandomCharacters)
+    )
+})
+return -join (
+    (New-RandomCharacters -Case Upper),
+    $longstr,
+    (New-RandomCharacters -Count 5 -Pattern "0-9"),
+    (New-RandomCharacters -Pattern "#+!." -Count 2)
+)
+}
+
+function New-VeryRandomPassword {
+param (
+    [int]$Length = 20
+)
+
+$pw = (-join (
+    1..$Length | ForEach-Object {
+        return (New-RandomCharacters -Pattern "!-z");
+    }
+)) -replace "([^a-z|#+$%&])"
+
+while(!($pw.Length -ge $Length)) {
+    $pw = $pw.Insert(
+        $(0..($pw.Length-1) | Get-Random),
+        $(New-RandomCharacters -Pattern "+#.,$%&`"?=_()![]{}'")
+    )
+}
+return $pw;
+
+}
+
+function New-AlphanumericPassword {
+    param (
+        [int]$Length = 20
+    )
+    return (-join ((48..57) + (65..90) + (97..122) + $(1..20 | ForEach-Object {return [byte][char]"_"}) | Get-Random -Count $Length | % {[char]$_}))
+}
+
+try {
+    [void][Reflection.Assembly]::LoadWithPartialName('Microsoft.VisualBasic')
+} catch {}
+
+do {
+
+cls
+
+Write-Host -ForegroundColor Green -BackgroundColor Black @"
+
+                                                                                                                             
+                                                  88                                   88888888ba   I8,        8        ,8I  
+                                                  88                                   88      "8b  ``8b       d8b       d8'  
+                                                  88                                   88      ,8P   "8,     ,8"8,     ,8"   
+    8b,dPPYba,  ,adPPYYba,  8b,dPPYba,    ,adPPYb,88   ,adPPYba,   88,dPYba,,adPYba,   88aaaaaa8P'    Y8     8P Y8     8P    
+    88P'   "Y8  ""     ``Y8  88P'   ``"8a  a8"    ``Y88  a8"     "8a  88P'   "88"    "8a  88""""""'      ``8b   d8' ``8b   d8'    
+    88          ,adPPPPP88  88       88  8b       88  8b       d8  88      88      88  88              ``8a a8'   ``8a a8'     
+    88          88,    ,88  88       88  "8a,   ,d88  "8a,   ,a8"  88      88      88  88               ``8a8'     ``8a8'      
+    88          ``"8bbdP"Y8  88       88   ``"8bbdP"Y8   ``"YbbdP"'   88      88      88  88                ``8'       ``8'       
+                                                                                                                             
+                                                                                                -by pytNico                  
+                                                                                                                             
+
+"@
+
+Write-Host @"
+    1) short password
+    2) long password
+    3) very random password
+    4) alphanumerical password
+
+    q) Quit
+"@
+
+$script:key = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');
+
+switch($script:key.Character) {
+    '1' {
+        $newPassword = New-ShortStandardPassword;
+        break;
+    }
+    '2' {
+        $newPassword = New-LongStandardPassword;
+        break;
+    }
+    '3' {
+        $newPassword = New-VeryRandomPassword;
+        break;
+    }
+    '4' {
+        $newPassword = New-AlphanumericPassword;
+        break;
+    }
+    'q' {
+        break;
+    }
+    default {
+    Write-Host -Fore Yellow @"
+        
+        Key is not assigned!
+
+"@
+    }
+}
+
+cls
+if($script:key.Character -ne 'q') {
+    Write-Host "`n`tPassword:`t`t$newPassword`n`tThe password has been copied to your clipboard!`n"
+    try{[Microsoft.VisualBasic.Interaction]::InputBox("Password", "Your new password:", $newPassword)|Out-Null}catch{}
+    $newPassword|Set-Clipboard
+}
+
+Read-Host "(press enter to continue)";
+} until ($script:key.Character -eq 'q')
+$script:key = '';

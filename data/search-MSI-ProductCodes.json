@@ -1,0 +1,5 @@
+{
+  "index": "5",
+  "description": "Searches MSI product codes of installed software on the computer.",
+  "runType": "batch"
+}
