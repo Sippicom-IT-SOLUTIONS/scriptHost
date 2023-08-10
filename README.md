@@ -1,4 +1,4 @@
-[![directory-listing](https://github.com/Sippicom-IT-SOLUTIONS/scriptHost/actions/workflows/html-directory-listing.yml/badge.svg?branch=main)](https://github.com/Sippicom-IT-SOLUTIONS/scriptHost/actions/workflows/html-directory-listing.yml)
+[![Static-Badge](https://img.shields.io/badge/SIPPICOM-IT--SOLUTIONS-ff9126?style=for-the-badge&labelColor=000000&color=ff9126)](https://sippicom.com) [![HTML-directory-listing](https://img.shields.io/github/actions/workflow/status/Sippicom-IT-SOLUTIONS/scriptHost/html-directory-listing.yml?style=for-the-badge&labelColor=ff9126)](https://github.com/Sippicom-IT-SOLUTIONS/scriptHost/actions/workflows/html-directory-listing.yml)
 
 # Welcome to the Sippicom IT-SOLUTIONS utility script repository
 > 
