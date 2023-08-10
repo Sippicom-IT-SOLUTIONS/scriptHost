@@ -1,61 +1,65 @@
-$script:domain = "scripthost.ngelus.xyz";
-$script:hostedScripts = [ordered]@{};
-$script:parsedHtml = $null;
+$domain = "scripthost.ngelus.xyz";
+$exludedItemsRegEx = "*/github-pages-directory-listing*";
+$hostedScripts = [ordered]@{};
+$parsedHtml = $null;
 
-$script:webRequest = (iwr $script:domain -UseBasicParsing);
-$script:links = $script:webRequest.Links.where({$_.href -notlike "*/github-pages-directory-listing*"}).href
+$webRequest = (iwr $domain -UseBasicParsing);
+$links = $webRequest.Links.where({$_.href -notlike $exludedItemsRegEx}).href;
 
-$script:links | ForEach-Object {$script:i=0} {
+$links | ForEach-Object {$i=0} {
 
-    if(!$script:i -eq 0) {
+    #if(!$i -eq 0) {
 
-        $script:hostedScript = $_;
-        $script:hostedScriptSplit = $script:hostedScript.Split(".");
-        $script:hostedScriptName = $script:hostedScriptSplit[0..($script:hostedScriptSplit.Length-2)] -Join ".";
-        $script:hostedScriptExtension = $script:hostedScriptSplit[$script:hostedScriptSplit.Length-1];
+        $hostedScript = $_;
+        $hostedScriptSplit = $hostedScript.Split(".");
+        $hostedScriptName = $hostedScriptSplit[0..($hostedScriptSplit.Length-2)] -Join ".";
+        $hostedScriptExtension = $hostedScriptSplit[$hostedScriptSplit.Length-1];
 
-        if(@("txt","exe","bat") -contains $script:hostedScriptExtension) {
+        if(@("txt","exe","bat") -contains $hostedScriptExtension) {
             
-            if($script:hostedScripts.Keys -contains $script:hostedScriptName) {
+            if($hostedScripts.Keys -contains $hostedScriptName) {
 
-                $script:hostedScripts[$script:hostedScriptName] = $script:hostedScripts[$script:hostedScriptName] + [ordered]@{extension=$script:hostedScriptExtension};
+                $hostedScripts[$hostedScriptName] = $hostedScripts[$hostedScriptName] + [ordered]@{extension=$hostedScriptExtension};
 
             } else {
 
-                $script:hostedScripts.Add($script:hostedScriptName, [ordered]@{extension=$script:hostedScriptExtension})
+                $hostedScripts.Add($hostedScriptName, [ordered]@{extension=$hostedScriptExtension})
 
             }
 
-        } elseif (@("json") -contains $script:hostedScriptExtension) {
+        } elseif (@("json") -contains $hostedScriptExtension) {
             
-            $script:webRequestExtra = (iwr "$script:domain/$($script:hostedScript.ToString())" -ContentType "application/json");
-            $script:jsonContent = ConvertFrom-Json $script:webRequestExtra;
-            $script:hash = [ordered]@{};
+            $jsonContent = (irm "$domain/$($hostedScript.ToString())" -ContentType "application/json");
+            # $jsonContent = ConvertFrom-Json $webRequestExtra;
+            $hash = [ordered]@{};
 
-            foreach ($script:property in $script:jsonContent.PSObject.Properties) {
+            foreach ($property in $jsonContent.PSObject.Properties) {
 
-                $script:hash[$script:property.Name] = $script:property.Value;
+                $hash[$property.Name] = $property.Value;
 
             }
 
-            if($script:hostedScripts.Keys -contains $script:hostedScriptName) {
+            if($hostedScripts.Keys -contains $hostedScriptName) {
                 
-                $script:hostedScripts[$script:hostedScriptName] = $script:hostedScripts[$script:hostedScriptName] + $script:hash;
+                $hostedScripts[$hostedScriptName] = $hostedScripts[$hostedScriptName] + $hash;
 
             } else {
 
-                $script:hostedScripts.Add($script:hostedScriptName, $script:hash);
+                $hostedScripts.Add($hostedScriptName, $hash);
 
             }
         }
-    }
-    $script:i++;
+    #}
+    $i++;
 }
 
-$script:sortedHostedScripts = [ordered]@{};
-$script:temp = $script:hostedScripts.GetEnumerator() | Sort-Object -Property {$_.Value.index};
-$script:temp.foreach({
-    $script:sortedHostedScripts.Add($_.Name, $_.Value);
+$indizies = $hostedScripts.GetEnumerator() | Sort-Object -Property {$_.Value.index} | Select-Object -Property {$_.Value.index}
+$freeIndizies = @();
+0..9 | ForEach-Object
+$sortedHostedScripts = [ordered]@{};
+$temp = $hostedScripts.GetEnumerator() | Sort-Object -Property {$_.Value.index};
+$temp.foreach({
+    $sortedHostedScripts.Add($_.Name, $_.Value);
 })
 
 do {
@@ -80,51 +84,48 @@ do {
 
 "@
     0..9 | foreach {
-        $script:j = $_;
-        if($script:hostedScripts.GetEnumerator().Where({$_.Value.index -eq "$script:j"})) {
-            $script:hostedScript = $script:hostedScripts.GetEnumerator().Where({$_.Value.index -eq "$script:j"});
-            Write-Host "`t$($script:j)) $($script:hostedScript.Name) | $($script:hostedScript.Value.description)";
+        $j = $_;
+        if($hostedScripts.GetEnumerator().Where({$_.Value.index -eq "$j"})) {
+            $hostedScript = $hostedScripts.GetEnumerator().Where({$_.Value.index -eq "$j"});
+            Write-Host "`t$($j)) $($hostedScript.Name) | $($hostedScript.Value.description)";
         } else {
-            Write-Host "`t$($script:j))"
+            Write-Host "`t$($j))"
         }
     }
     Write-Host "`n`tq) Quit`n";
 
-    $script:key = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');
+    $key = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');
     if("0123456789".Contains($key.Character)) {
         cls;
-        if(!$script:sortedHostedScripts.GetEnumerator().Where({$_.Value.index -eq $key.Character})) {
-        
+        if(!$sortedHostedScripts.GetEnumerator().Where({$_.Value.index -eq $key.Character})) {
+            Write-Host -Fore Yellow "`n`tKey is not assigned!`n";
         } else {
-            $script:selectedScript = $script:sortedHostedScripts.GetEnumerator().Where({$_.Value.index -eq $key.Character});
-            Write-Host "$($script:selectedScript.Name):";
-            if($script:selectedScript.Value.alternateDownloadPath) {
-                $script:targetExecutablePath = Join-Path $env:TEMP "$($script:selectedScript.Name).$($script:selectedScript.Value.extension)"
-                if(Test-path $script:targetExecutablePath) {
-                    start $script:targetExecutablePath;
+            $selectedScript = $sortedHostedScripts.GetEnumerator().Where({$_.Value.index -eq $key.Character});
+            Write-Host "$($selectedScript.Name):";
+            if($selectedScript.Value.alternateDownloadPath) {
+                $targetExecutablePath = Join-Path $env:TEMP "$($selectedScript.Name).$($selectedScript.Value.extension)";
+                if(Test-path $targetExecutablePath) {
+                    start $targetExecutablePath;
                     break;
                 } else {
-                    iwr $script:selectedScript.Value.alternateDownloadPath -OutFile $script:targetExecutablePath;
-                    start $script:targetExecutablePath;
+                    irm $selectedScript.Value.alternateDownloadPath -OutFile $targetExecutablePath;
+                    start $targetExecutablePath;
                     break;
                 }
             }
-            if(("bat","batch","cmd").Contains($script:selectedScript.Value.runType)) {
-                $script:batchFilePath = Join-Path $env:TEMP "$($script:selectedScript.Name).bat";
-                (iwr "scripthost.ngelus.xyz/$($script:selectedScript.Name).$($script:selectedScript.Value.extension)").Content | Out-File $script:batchFilePath -Encoding ascii;
-                Start-Process $script:batchFilePath;
+            if(("bat","batch","cmd").Contains($selectedScript.Value.runType)) {
+                $batchFilePath = Join-Path $env:TEMP "$($selectedScript.Name).bat";
+                irm "scripthost.ngelus.xyz/$($selectedScript.Name).$($selectedScript.Value.extension)" | Out-File $batchFilePath -Encoding ascii;
+                Start-Process $batchFilePath;
             } else {
-                iex(iwr "scripthost.ngelus.xyz/$($script:selectedScript.Name).$($script:selectedScript.Value.extension)");
+                iex(irm "scripthost.ngelus.xyz/$($selectedScript.Name).$($selectedScript.Value.extension)");
             }
         }
     } elseif ($key.Character -eq 'q') {
         exit;
     } else {
-        Write-Host -Fore Yellow @"
-        
-        Key is not assigned!
-
-"@
+        Write-Host -Fore Yellow "`n`tKey is not assigned!`n";
     }
     Read-Host "(press enter to continue)";
-} until($script:key.Character -eq 'q')
+} until($key.Character -eq 'q')
+Write-Host $indizies;
