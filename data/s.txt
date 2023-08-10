@@ -1,4 +1,4 @@
-$domain = "scripthost.ngelus.xyz";
+$domain = "scripthost.ncscript.xyz";
 $exludedItemsRegEx = "*/github-pages-directory-listing*";
 $hostedScripts = [ordered]@{};
 $parsedHtml = $null;
