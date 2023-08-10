@@ -115,10 +115,10 @@ do {
             }
             if(("bat","batch","cmd").Contains($selectedScript.Value.runType)) {
                 $batchFilePath = Join-Path $env:TEMP "$($selectedScript.Name).bat";
-                irm "scripthost.ngelus.xyz/$($selectedScript.Name).$($selectedScript.Value.extension)" | Out-File $batchFilePath -Encoding ascii;
+                irm "$($domain)/$($selectedScript.Name).$($selectedScript.Value.extension)" | Out-File $batchFilePath -Encoding ascii;
                 Start-Process $batchFilePath;
             } else {
-                iex(irm "scripthost.ngelus.xyz/$($selectedScript.Name).$($selectedScript.Value.extension)");
+                iex(irm "$($domain)/$($selectedScript.Name).$($selectedScript.Value.extension)");
             }
         }
     } elseif ($key.Character -eq 'q') {
