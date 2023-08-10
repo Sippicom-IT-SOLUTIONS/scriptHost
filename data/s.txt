@@ -8,8 +8,6 @@ $links = $webRequest.Links.where({$_.href -notlike $exludedItemsRegEx}).href;
 
 $links | ForEach-Object {$i=0} {
 
-    #if(!$i -eq 0) {
-
         $hostedScript = $_;
         $hostedScriptSplit = $hostedScript.Split(".");
         $hostedScriptName = $hostedScriptSplit[0..($hostedScriptSplit.Length-2)] -Join ".";
@@ -30,7 +28,7 @@ $links | ForEach-Object {$i=0} {
         } elseif (@("json") -contains $hostedScriptExtension) {
             
             $jsonContent = (irm "$domain/$($hostedScript.ToString())" -ContentType "application/json");
-            # $jsonContent = ConvertFrom-Json $webRequestExtra;
+            
             $hash = [ordered]@{};
 
             foreach ($property in $jsonContent.PSObject.Properties) {
@@ -49,7 +47,7 @@ $links | ForEach-Object {$i=0} {
 
             }
         }
-    #}
+    
     $i++;
 }
 
