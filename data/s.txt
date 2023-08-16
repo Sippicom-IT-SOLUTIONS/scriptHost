@@ -53,7 +53,6 @@ $links | ForEach-Object {$i=0} {
 
 $indizies = $hostedScripts.GetEnumerator() | Sort-Object -Property {$_.Value.index} | Select-Object -Property {$_.Value.index}
 $freeIndizies = @();
-0..9 | ForEach-Object
 $sortedHostedScripts = [ordered]@{};
 $temp = $hostedScripts.GetEnumerator() | Sort-Object -Property {$_.Value.index};
 $temp.foreach({
