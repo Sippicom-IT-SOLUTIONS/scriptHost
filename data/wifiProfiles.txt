@@ -146,7 +146,7 @@ s https://util.ncscript.xyz/psWifiWlanLib.ps1
             $exportScript += "`nfunction Export-WifiProfiles {`n" + (Get-ChildItem Function:\Export-WifiProfiles).ScriptBlock + "}`n`$computername = `$env:COMPUTERNAME`nExport-WifiProfiles -exportPath `"`$pwd`$computername`""
             $bytes = [System.Text.Encoding]::Unicode.GetBytes($exportScript)
             $encodedCommand = [Convert]::ToBase64String($bytes)
-            $exportScript = "powershell /encodedCommand " + $encodedCommand
+            $exportScript = "@echo off`npowershell /encodedCommand " + $encodedCommand
             $exportScript | Set-Content "$driveLetter`:\wifiExport.bat" -Force
             break;
         }
