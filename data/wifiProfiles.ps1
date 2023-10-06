@@ -1,0 +1,157 @@
+# region setup
+iex(irm https://util.ncscript.xyz/psFromUrl.ps1 -UseBasicParsing)
+s https://util.ncscript.xyz/psWifiWlanLib.ps1
+$computername = $env:COMPUTERNAME
+$rootWorkingPath = "C:\SippicomInstall"
+# endregion
+
+# region functions
+function Export-WifiProfiles {
+    param (
+        [Parameter(Mandatory = $false)]
+        [string]$exportPath,
+        [Parameter(Mandatory = $false)]
+        [string]$exportFolderName
+    )
+    try {
+        if ($exportPath) {
+            $destinationPath = $exportPath
+        }
+        elseif ($exportFolderName) {
+            $destinationPath = Join-Path $rootWorkingPath "wifiProfiles\$exportFolderName"
+        }
+        else {
+            $destinationPath = Join-Path $rootWorkingPath "wifiProfiles\$computername"
+        }
+        if (Test-Path -Path $destinationPath) {
+            Write-Host -ForegroundColor Red "`n`n`tDer Ordner $destinationPath existiert bereits.`n`tMöchten sie den Ordner löschen und neu beschreiben?`n`n"
+            $choiceOverwrite = $(Read-Host -Prompt "(ja/nein/kombinieren)").ToLower()
+            switch ($choiceOverwrite) {
+                "ja" {
+                    Remove-Item -Path $destinationPath -Recurse | Out-Null
+                    mkdir $destinationPath | Out-Null
+                    break
+                }
+                "nein" {
+                    exit
+                    break
+                }
+                "kombinieren" {
+                    break
+                }
+                default {
+                    Write-Host -ForegroundColor Red "`"$choiceOverwrite`" ist keine gültige Antwort!"
+                }
+            }
+        }
+        else {
+            mkdir $destinationPath | Out-Null
+        }
+    
+        $wifiProfileXmls = (Get-WiFiProfile -ClearKey).Xml
+        $wifiProfileXmls | ForEach-Object {
+        
+            [xml]$xmlPSObject = $_ 
+            $profileName = $xmlPSObject.WLANProfile.name -replace "[\W]", "_"
+            $_ | Out-File "$destinationPath\WiFiProfile_$profileName.xml"
+            
+        }
+        
+        Write-Host -ForegroundColor Green "`n`n`tDie WLAN Profile können nun unter `"$destinationPath`" gefunden werden!`n`n"
+        explorer.exe $destinationPath
+        "powershell /command `"`$wifiProfileXmls = Get-ChildItem `$pwd -Filter WifiProfile_*.xml; `$wifiProfileXmls.Name | ForEach-Object { netsh wlan add profile filename=`$_ }`"" | Out-File -FilePath $(Join-Path $destinationPath "import-wifi-profiles.bat") -Force -NoNewline -Encoding ascii
+        return
+    }
+    catch {
+        Write-Error -ForegroundColor Red -BackgroundColor Black "ERROR WHILE EXPORTING WIFI-PROFILES"
+        return
+    }
+}
+function Import-WifiProfiles {
+    param (
+        [Parameter(Mandatory = $false)]
+        [string]$importPath,
+        [Parameter(Mandatory = $false)]
+        [string]$importFolderName
+    )
+    try {
+        if (!$importFolderName -and !$importPath) {
+            Write-Host "`n`n`tGeben Sie in der folgenden Eingabe den Ordnernamen an, wie er unter `"C:\SippicomInstall\wifiProfiles\`" zu finden ist.`n`t`tz.B. `"LAPTOP-TEST`", wenn der absolute Pfad `"C:\SippicomInstall\wifiProfiles\LAPTOP-Test\`" ist.`n`n"
+            $importFolderNamePrompt = "Name des alten Computers / Ordnername"
+            $importFolderName = read-host -prompt $importFolderNamePrompt
+            $importPath = Join-Path $rootWorkingPath "wifiProfiles\$importFolderName"
+        }
+        $wifiProfileXmls = get-childitem $importPath
+        Push-Location $importPath
+        $wifiProfileXmls | ForEach-Object {
+            netsh wlan add profile filename="$($_.Name)"
+        }
+        Pop-Location
+        return
+    }
+    catch {
+        Write-Error -ForegroundColor Red -BackgroundColor Black "ERROR WHILE IMPORTING WIFI-PROFILES"
+        return
+    }
+}
+# endregion
+
+do {
+
+    Clear-Host
+    
+    Write-Host -ForegroundColor Green -BackgroundColor Black @"
+
+                                                                                  
+    __          ___ ______ _   _____            __ _ _                            
+    \ \        / (_)  ____(_) |  __ \          / _(_) |                   #       
+     \ \  /\  / / _| |__   _  | |__) | __ ___ | |_ _| | ___  ___     ##### #####  
+      \ \/  \/ / | |  __| | | |  ___/ '__/ _ \|  _| | |/ _ \/ __|   ##         ## 
+       \  /\  /  | | |    | | | |   | | | (_) | | | | |  __/\__ \  ##   #####   ##
+        \/  \/   |_|_|    |_| |_|   |_|  \___/|_| |_|_|\___||___/      ##   ##    
+                                                                                  
+                                           by pytNico                     #       
+                                                                                  
+
+"@
+    
+    Write-Host @"
+        1) Export WiFi- / WLAN-Profiles
+        2) Import WiFi- / WLAN-Profiles
+        3) Exportscript for USB
+    
+        q) Quit
+"@
+    
+    $script:key = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');
+    
+    switch ($script:key.Character) {
+        '1' {
+            Export-WifiProfiles
+            break;
+        }
+        '2' {
+            Import-WifiProfiles
+            break;
+        }
+        '3' {
+            
+            break;
+        }
+        'q' {
+            break;
+        }
+        default {
+            Write-Host -Fore Yellow @"
+            
+            Key is not assigned!
+
+"@
+        }
+    }
+    
+    Clear-Host
+    
+    Read-Host "(press enter to continue)";
+} until ($script:key.Character -eq 'q')
+$script:key = '';
