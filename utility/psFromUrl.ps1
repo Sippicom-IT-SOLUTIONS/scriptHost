@@ -1,7 +1,8 @@
 function s {
 	param (
-        [ValidateNotNullOrEmpty()]
+		[ValidateNotNullOrEmpty()]
 		[string]$url
 	)
-	irm $url | iex
+	$sb = [ScriptBlock]::Create((irm $url -UseBasicParsing))
+	New-Module -ScriptBlock $sb | Import-Module
 }
