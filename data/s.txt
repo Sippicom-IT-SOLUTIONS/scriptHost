@@ -84,12 +84,15 @@ do {
         $j = $_;
         if($hostedScripts.GetEnumerator().Where({$_.Value.index -eq "$j"})) {
             $hostedScript = $hostedScripts.GetEnumerator().Where({$_.Value.index -eq "$j"});
-            Write-Host "`t$($j)) $($hostedScript.Name) | $($hostedScript.Value.description)";
+			Write-Host -ForegroundColor Green "`t$($j)" -NoNewline
+            Write-Host ") $($hostedScript.Name) | $($hostedScript.Value.description)`n";
         } else {
-            Write-Host "`t$($j))"
+			Write-Host -ForegroundColor Green "`t$($j)" -NoNewline
+            Write-Host ")`n"
         }
     }
-    Write-Host "`n`tq) Quit`n";
+	Write-Host -ForegroundColor Red "`n`n`tq" -NoNewline
+    Write-Host ") Quit`n";
 
     $key = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');
     if("0123456789".Contains($key.Character)) {
