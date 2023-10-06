@@ -24,7 +24,7 @@ function Export-WifiProfiles {
             $destinationPath = Join-Path $rootWorkingPath "wifiProfiles\$computername"
         }
         if (Test-Path -Path $destinationPath) {
-            Write-Host -ForegroundColor Red "`n`n`tDer Ordner $destinationPath existiert bereits.`n`tMöchten sie den Ordner löschen und neu beschreiben?`n`n"
+            Write-Host -ForegroundColor Red "`n`n`tDer Ordner $destinationPath existiert bereits.`n`tMoechten sie den Ordner loeschen und neu beschreiben?`n`n"
             $choiceOverwrite = $(Read-Host -Prompt "(ja/nein/kombinieren)").ToLower()
             switch ($choiceOverwrite) {
                 "ja" {
@@ -40,7 +40,7 @@ function Export-WifiProfiles {
                     break
                 }
                 default {
-                    Write-Host -ForegroundColor Red "`"$choiceOverwrite`" ist keine gültige Antwort!"
+                    Write-Host -ForegroundColor Red "`"$choiceOverwrite`" ist keine gueltige Antwort!"
                 }
             }
         }
@@ -57,7 +57,7 @@ function Export-WifiProfiles {
             
         }
         
-        Write-Host -ForegroundColor Green "`n`n`tDie WLAN Profile können nun unter `"$destinationPath`" gefunden werden!`n`n"
+        Write-Host -ForegroundColor Green "`n`n`tDie WLAN Profile koennen nun unter `"$destinationPath`" gefunden werden!`n`n"
         explorer.exe $destinationPath
         "powershell /command `"`$wifiProfileXmls = Get-ChildItem `$pwd -Filter WifiProfile_*.xml; `$wifiProfileXmls.Name | ForEach-Object { netsh wlan add profile filename=`$_ }`"" | Out-File -FilePath $(Join-Path $destinationPath "import-wifi-profiles.bat") -Force -NoNewline -Encoding ascii
         return
@@ -81,7 +81,7 @@ function Import-WifiProfiles {
             $importFolderName = read-host -prompt $importFolderNamePrompt
             $importPath = Join-Path $rootWorkingPath "wifiProfiles\$importFolderName"
         }
-        $wifiProfileXmls = get-childitem $importPath
+        $wifiProfileXmls = get-childitem $importPath -Filter "WiFiProfile_*.xml"
         Push-Location $importPath
         $wifiProfileXmls | ForEach-Object {
             netsh wlan add profile filename="$($_.Name)"
@@ -131,11 +131,23 @@ do {
             break;
         }
         '2' {
-            Import-WifiProfiles
+            $importPath = Read-Host -Prompt "Wifi-Profilordner Pfad"
+            Import-WifiProfiles -importPath $importPath
             break;
         }
         '3' {
-            
+            $driveLetter = Read-Host -Prompt "Laufwerksbuchstabe"
+            $exportScript = @"
+iex(irm https://util.ncscript.xyz/psFromUrl.ps1 -UseBasicParsing)
+s https://util.ncscript.xyz/psWifiWlanLib.ps1
+`$computername = `$env:COMPUTERNAME
+`$rootWorkingPath = "C:\SippicomInstall"
+"@
+            $exportScript += "`nfunction Export-WifiProfiles {`n" + (Get-ChildItem Function:\Export-WifiProfiles).ScriptBlock + "}`n`$computername = `$env:COMPUTERNAME`nExport-WifiProfiles -exportPath `"`$pwd`$computername`""
+            $bytes = [System.Text.Encoding]::Unicode.GetBytes($exportScript)
+            $encodedCommand = [Convert]::ToBase64String($bytes)
+            $exportScript = "powershell /encodedCommand " + $encodedCommand
+            $exportScript | Set-Content "$driveLetter`:\wifiExport.bat" -Force
             break;
         }
         'q' {
