@@ -3,127 +3,129 @@ $exludedItemsRegEx = "*/github-pages-directory-listing*";
 $hostedScripts = [ordered]@{};
 $parsedHtml = $null;
 
-$webRequest = (iwr $domain -UseBasicParsing);
-$links = $webRequest.Links.where({$_.href -notlike $exludedItemsRegEx}).href;
+$webRequest = (Invoke-WebRequest $domain -UseBasicParsing);
+$links = $webRequest.Links.where({ $_.href -notlike $exludedItemsRegEx }).href;
 
-$links | ForEach-Object {$i=0} {
+$links | ForEach-Object { $i = 0 } {
 
-        $hostedScript = $_;
-        $hostedScriptSplit = $hostedScript.Split(".");
-        $hostedScriptName = $hostedScriptSplit[0..($hostedScriptSplit.Length-2)] -Join ".";
-        $hostedScriptExtension = $hostedScriptSplit[$hostedScriptSplit.Length-1];
+    $hostedScript = $_;
+    $hostedScriptSplit = $hostedScript.Split(".");
+    $hostedScriptName = $hostedScriptSplit[0..($hostedScriptSplit.Length - 2)] -Join ".";
+    $hostedScriptExtension = $hostedScriptSplit[$hostedScriptSplit.Length - 1];
 
-        if(@("txt","exe","bat") -contains $hostedScriptExtension) {
+    if (@("txt", "exe", "bat") -contains $hostedScriptExtension) {
             
-            if($hostedScripts.Keys -contains $hostedScriptName) {
+        if ($hostedScripts.Keys -contains $hostedScriptName) {
 
-                $hostedScripts[$hostedScriptName] = $hostedScripts[$hostedScriptName] + [ordered]@{extension=$hostedScriptExtension};
+            $hostedScripts[$hostedScriptName] = $hostedScripts[$hostedScriptName] + [ordered]@{extension = $hostedScriptExtension };
 
-            } else {
-
-                $hostedScripts.Add($hostedScriptName, [ordered]@{extension=$hostedScriptExtension})
-
-            }
-
-        } elseif (@("json") -contains $hostedScriptExtension) {
-            
-            $jsonContent = (irm "$domain/$($hostedScript.ToString())" -ContentType "application/json");
-            
-            $hash = [ordered]@{};
-
-            foreach ($property in $jsonContent.PSObject.Properties) {
-
-                $hash[$property.Name] = $property.Value;
-
-            }
-
-            if($hostedScripts.Keys -contains $hostedScriptName) {
-                
-                $hostedScripts[$hostedScriptName] = $hostedScripts[$hostedScriptName] + $hash;
-
-            } else {
-
-                $hostedScripts.Add($hostedScriptName, $hash);
-
-            }
         }
+        else {
+
+            $hostedScripts.Add($hostedScriptName, [ordered]@{extension = $hostedScriptExtension })
+
+        }
+
+    }
+    elseif (@("json") -contains $hostedScriptExtension) {
+            
+        $jsonContent = (Invoke-RestMethod "$domain/$($hostedScript.ToString())" -ContentType "application/json");
+            
+        $hash = [ordered]@{};
+
+        foreach ($property in $jsonContent.PSObject.Properties) {
+
+            $hash[$property.Name] = $property.Value;
+
+        }
+
+        if ($hostedScripts.Keys -contains $hostedScriptName) {
+                
+            $hostedScripts[$hostedScriptName] = $hostedScripts[$hostedScriptName] + $hash;
+
+        }
+        else {
+
+            $hostedScripts.Add($hostedScriptName, $hash);
+
+        }
+    }
     
     $i++;
 }
 
-$indizies = $hostedScripts.GetEnumerator() | Sort-Object -Property {$_.Value.index} | Select-Object -Property {$_.Value.index}
+$indizies = $hostedScripts.GetEnumerator() | Sort-Object -Property { $_.Value.index } | Select-Object -Property { $_.Value.index }
 $freeIndizies = @();
 $sortedHostedScripts = [ordered]@{};
-$temp = $hostedScripts.GetEnumerator() | Sort-Object -Property {$_.Value.index};
+$temp = $hostedScripts.GetEnumerator() | Sort-Object -Property { $_.Value.index };
 $temp.foreach({
-    $sortedHostedScripts.Add($_.Name, $_.Value);
-})
+        $sortedHostedScripts.Add($_.Name, $_.Value);
+    })
 
 do {
 
-    cls
+    Clear-Host
     Write-Host -ForegroundColor Red -BackgroundColor White @"
-
-                                                                                                                 
-                                                                                                                 
-     ad88888ba                           88                       88        88                                   
-    d8"     "8b                          ""                ,d     88        88                            ,d     
-    Y8,                                                    88     88        88                            88     
-    ``Y8aaaaa,     ,adPPYba,  8b,dPPYba,  88  8b,dPPYba,  MM88MMM  88aaaaaaaa88   ,adPPYba,   ,adPPYba,  MM88MMM  
-      ``"""""8b,  a8"     ""  88P'   "Y8  88  88P'    "8a   88     88""""""""88  a8"     "8a  I8[    ""    88     
-            ``8b  8b          88          88  88       d8   88     88        88  8b       d8   ``"Y8ba,     88     
-    Y8a     a8P  "8a,   ,aa  88          88  88b,   ,a8"   88,    88        88  "8a,   ,a8"  aa    ]8I    88,    
-     "Y88888P"    ``"Ybbd8"'  88          88  88``YbbdP"'    "Y888  88        88   ``"YbbdP"'   ``"YbbdP"'    "Y888  
-                                             88                                                                  
-                                             88                                                                  
-                                                                                -by pytNico                      
-                                                                                                                 
-
+                                                                           
+    _________            .__        __   _______         .__    .___     
+   /   _____/ ___________|__|______/  |_ \      \   ____ |__| __| _/     
+   \_____  \_/ ___\_  __ \  \____ \   __\/   |   \ /  _ \|  |/ __ |      
+   /        \  \___|  | \/  |  |_> >  | /    |    (  <_> )  / /_/ |      
+  /_______  /\___  >__|  |__|   __/|__| \____|__  /\____/|__\____ |      
+          \/     \/         |__|                \/               \/      
+                                           -by pytNico                   
+                                                                         
 "@
-    0..9 | foreach {
+    0..9 | ForEach-Object {
         $j = $_;
-        if($hostedScripts.GetEnumerator().Where({$_.Value.index -eq "$j"})) {
-            $hostedScript = $hostedScripts.GetEnumerator().Where({$_.Value.index -eq "$j"});
-			Write-Host -ForegroundColor Green "`t$($j)" -NoNewline
+        if ($hostedScripts.GetEnumerator().Where({ $_.Value.index -eq "$j" })) {
+            $hostedScript = $hostedScripts.GetEnumerator().Where({ $_.Value.index -eq "$j" });
+            Write-Host -ForegroundColor Green "`t$($j)" -NoNewline
             Write-Host ") $($hostedScript.Name) | $($hostedScript.Value.description)`n";
-        } else {
-			Write-Host -ForegroundColor Green "`t$($j)" -NoNewline
+        }
+        else {
+            Write-Host -ForegroundColor Green "`t$($j)" -NoNewline
             Write-Host ")`n"
         }
     }
-	Write-Host -ForegroundColor Red "`n`n`tq" -NoNewline
+    Write-Host -ForegroundColor Red "`n`n`tq" -NoNewline
     Write-Host ") Quit`n";
 
     $key = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');
-    if("0123456789".Contains($key.Character)) {
-        cls;
-        if(!$sortedHostedScripts.GetEnumerator().Where({$_.Value.index -eq $key.Character})) {
+    if ("0123456789".Contains($key.Character)) {
+        Clear-Host;
+        if (!$sortedHostedScripts.GetEnumerator().Where({ $_.Value.index -eq $key.Character })) {
             Write-Host -Fore Yellow "`n`tKey is not assigned!`n";
-        } else {
-            $selectedScript = $sortedHostedScripts.GetEnumerator().Where({$_.Value.index -eq $key.Character});
+        }
+        else {
+            $selectedScript = $sortedHostedScripts.GetEnumerator().Where({ $_.Value.index -eq $key.Character });
             Write-Host "$($selectedScript.Name):";
-            if($selectedScript.Value.alternateDownloadPath) {
+            if ($selectedScript.Value.alternateDownloadPath) {
                 $targetExecutablePath = Join-Path $env:TEMP "$($selectedScript.Name).$($selectedScript.Value.extension)";
-                if(Test-path $targetExecutablePath) {
-                    start $targetExecutablePath;
+                if (Test-path $targetExecutablePath) {
+                    Start-Process $targetExecutablePath;
                     break;
-                } else {
-                    irm $selectedScript.Value.alternateDownloadPath -OutFile $targetExecutablePath;
-                    start $targetExecutablePath;
+                }
+                else {
+                    Invoke-RestMethod $selectedScript.Value.alternateDownloadPath -OutFile $targetExecutablePath;
+                    Start-Process $targetExecutablePath;
                     break;
                 }
             }
-            if(("bat","batch","cmd").Contains($selectedScript.Value.runType)) {
+            if (("bat", "batch", "cmd").Contains($selectedScript.Value.runType)) {
                 $batchFilePath = Join-Path $env:TEMP "$($selectedScript.Name).bat";
-                irm "$($domain)/$($selectedScript.Name).$($selectedScript.Value.extension)" | Out-File $batchFilePath -Encoding ascii;
+                Invoke-RestMethod "$($domain)/$($selectedScript.Name).$($selectedScript.Value.extension)" | Out-File $batchFilePath -Encoding ascii;
                 Start-Process $batchFilePath;
-            } else {
-                iex(irm "$($domain)/$($selectedScript.Name).$($selectedScript.Value.extension)");
+            }
+            else {
+                Invoke-Expression(Invoke-RestMethod "$($domain)/$($selectedScript.Name).$($selectedScript.Value.extension)");
             }
         }
-    } elseif ($key.Character -eq 'q') {
+    }
+    elseif ($key.Character -eq 'q') {
         exit;
-    } else {
+    }
+    else {
         Write-Host -Fore Yellow "`n`tKey is not assigned!`n";
     }
     Read-Host "(press enter to continue)";
