@@ -143,7 +143,7 @@ s https://util.ncscript.xyz/psWifiWlanLib.ps1
 `$computername = `$env:COMPUTERNAME
 `$rootWorkingPath = "C:\SippicomInstall"
 "@
-            $exportScript += "`nfunction Export-WifiProfiles {`n" + (Get-ChildItem Function:\Export-WifiProfiles).ScriptBlock + "}`n`$computername = `$env:COMPUTERNAME`nExport-WifiProfiles -exportPath `"`$pwd`$computername`""
+            $exportScript += "`nfunction Export-WifiProfiles {`n" + (Get-ChildItem Function:\Export-WifiProfiles).ScriptBlock + "}`n`$computername = `$env:COMPUTERNAME`nExport-WifiProfiles -exportPath `"`$pwd\wifiProfiles\`$computername`""
             $bytes = [System.Text.Encoding]::Unicode.GetBytes($exportScript)
             $encodedCommand = [Convert]::ToBase64String($bytes)
             $exportScript = "@echo off`npowershell /encodedCommand " + $encodedCommand
