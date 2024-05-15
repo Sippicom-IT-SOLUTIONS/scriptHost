@@ -4,3 +4,4 @@ iwr -URI https://install.speedtest.net/app/cli/ookla-speedtest-1.2.0-win64.zip -
 Expand-Archive "$ENV:TEMP\speedtest.zip" -DestinationPath "$ENV:TEMP\speedtest"
 . "$ENV:TEMP\speedtest\speedtest.exe"
 Pop-Location
+pause
